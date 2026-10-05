@@ -1,5 +1,5 @@
+# learn AI coding
 
-# AI coding
 
 https://www.aihero.dev/workshops/ai-coding-crash-course 結合官方文件的紀錄
 
@@ -59,7 +59,7 @@ what's actually eating up the agent's context, why it fills up, how to keep it s
 Claude Code 的 context window(預設約 200K tokens,部分模型有 1M beta 版本)主要被以下幾類東西佔用:
 
 1. **System prompt** — Claude Code 本身的固定指令
-2. **工具定義(schema)** — 每個內建工具(Read/Edit/Bash…)加上您連接的每個 MCP server 提供的工具,都要把完整 schema 塞進 context。MCP server 接越多,這塊佔用越大
+2. **工具定義(schema)** — 每個內建工具(Read/Edit/Bash…)加上連接的每個 MCP server 提供的工具,都要把完整 schema 塞進 context。MCP server 接越多,這塊佔用越大
 3. **記憶體檔案** — CLAUDE.md、專案/使用者層級的自動記憶檔案,啟動時就載入
 4. **對話歷史** — 每一輪的使用者訊息、Claude 的回覆、以及所有 tool_use / tool_result(工具呼叫與其回傳結果)
 5. **檔案讀取內容** — Read 工具讀進來的完整檔案內容會整包留在 context 裡
@@ -81,7 +81,7 @@ Claude Code 的 context window(預設約 200K tokens,部分模型有 1M beta 版
 - **善用 Grep/搜尋工具**取代直接 cat 大檔
 - **`/clear`**:切換到不相關任務時清空對話歷史(但保留 CLAUDE.md 等專案設定)
 - **`/compact`**:手動觸發摘要壓縮舊對話,保留關鍵資訊釋放空間
-- 系統也有 **auto-compaction**:context 使用量接近上限時會自動摘要壓縮;更輕量的 **microcompact** 機制會先嘗試移除舊的工具結果來騰出空間,不必真的做完整摘要
+- 系統也有 **auto-compaction**:context 使用量接近上限時會自動摘要壓縮; **microcompact** 機制會先嘗試移除舊的工具結果來騰出空間,不必做完整摘要
 - 只連接當下任務真正需要的 MCP server,減少工具 schema 常駐佔用
 
 ## 如何查看「確切」狀態,而非用猜的
@@ -259,9 +259,9 @@ description: Extract text and tables from PDF files, fill forms, merge documents
 
 如果邏輯可以寫成 deterministic 的 script（如 `validate_form.py`）,指示 Claude 用 bash 執行它、只把輸出（如 "Validation passed"）帶進 context,腳本本身的程式碼永遠不進 context window——這比讓 Claude 讀完腳本邏輯再自己生成等效程式碼省得多。
 
-## 驗證方法
+## skill 驗證方法
 
-文檔建議先用「evaluation-driven development」而不是先寫文件：先讓 Claude 在沒有 skill 的情況下跑代表性任務、記錄哪裡失敗，再針對這些落差寫最精簡的內容,並用 Haiku / Sonnet / Opus 分別測試(Haiku 測試「指引夠不夠」,Opus 測試「有沒有過度解釋」）
+建議先用「evaluation-driven development」而不是先寫文件：先讓 Claude 在沒有 skill 的情況下跑代表性任務、記錄哪裡失敗，再針對這些落差寫最精簡的內容,並用 Haiku / Sonnet / Opus 分別測試(Haiku 測試「指引夠不夠」,Opus 測試「有沒有過度解釋」）
 
 
 ---
@@ -270,54 +270,35 @@ description: Extract text and tables from PDF files, fill forms, merge documents
 
 how to turn a grilling session into a clear spec the agent can build from, to deliver the results you actually want.
 
-## 從「討論」到「Spec」再到「Agent 實作」
+### 1. 判斷 Spec 是否夠清楚的標準
 
-### 1. 整體工作流：Explore → Plan → Code → Commit
+> **「兩個獨立的 session，看了同一份 Spec，應該會得出同樣的 pass/fail 判定。」**
 
-Claude Code 官方推薦的四階段流程：
-
-- **Explore**：先讓 agent（或人）讀懂現有程式碼/系統脈絡，不急著寫方案
-- **Plan**：切到 **Plan Mode**（`Shift+Tab` 切換），這階段只讀取不修改檔案，用來反覆釐清需求、討論邊界情況、產出書面計畫
-- **Code**：計畫確認後才進入實作
-- **Commit**：完成後整理提交
-
-官方建議把心力配置在「**80% 時間規劃、20% 時間監督執行**」——這正是「grilling session」該發生的地方：把模糊需求在動手前榨乾。
-
-### 2. 判斷 Spec 是否夠清楚的標準
-
-出自 [Demystifying Evals for AI Agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents)，這是最貼近「Crystal clear requirements」主題的官方文章。核心測試法：
-
-> **「兩位互相不知情的領域專家，看了同一份 Spec，應該會得出同樣的 pass/fail 判定。」**
-
-如果做不到這件事，代表 Spec 還不夠清楚，需要繼續追問。這篇文章也指出好的 Spec 要包含三要素：
+如果做不到這件事，代表 Spec 還不夠清楚，需要繼續補充。好的 Spec 要包含三要素：
 
 1. **無歧義的任務描述**（instructions）
 2. **明確的成功標準**（success criteria）
 3. **參考解**（reference solution，用來驗證這個 Spec 真的可達成）
 
-以及一條關鍵原則：「**Grader 會檢查的每一件事，都應該在任務描述裡寫清楚**」——換句話說，不要讓 agent 去猜驗收標準沒寫出來的部分。
+以及一條關鍵原則：「**要檢查的每一件事，都應該在任務描述裡寫清楚**」——換句話說，不要讓 agent 去猜驗收標準沒寫出來的部分。
 
-### 3. 「約束交付物,而非規定實作路徑」
-
-出自 [Building Effective AI Agents](https://www.anthropic.com/research/building-effective-agents)：
+### 2. 「約束交付物,而非規定實作路徑」
 
 - 如果人（或 Spec 撰寫者）在事前就試圖規定所有技術細節,一旦其中有錯,錯誤會一路級聯到下游實作
 - 更好的做法是：**清楚定義「要達成的成果」和「驗收條件」，把「怎麼做」的空間留給 agent 去探索**
 - 建議用「功能展開」的方式描述需求，例如：「使用者可以開新聊天、輸入查詢、按 Enter、看到串流回應」——這是在描述行為與結果，不是在規定程式碼結構
 
-### 4. Eval-driven：先寫測試案例，再讓 agent 動手
+### 3. Eval-driven：先寫測試案例，再讓 agent 動手
 
-官方建議反直覺的順序：**先寫評估用例(比如寫出 20–50 個會出錯的案例)去逼出真正的需求，再讓 agent 去滿足這些用例**，而不是先寫一份看似完整的文字 Spec 就直接開工。這個過程本身就是「grilling」——寫 eval case 的過程會強迫你把模糊地帶具體化成可驗證的例子。
+官方建議反直覺的順序：**先寫評估用例(比如寫出 20–50 個會出錯的案例)去定義成功的標準，再讓 agent 去滿足這些用例**，而不是先寫一份看似完整的文字 Spec 就直接開工。這個過程本身就是「grilling」——寫 eval case 的過程會強迫你把模糊地帶具體化成可驗證的例子。
 
-### 5. CLAUDE.md / Skill 描述的明確度指引
-
-[Skill authoring best practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices) 也給了可以套用在 Spec 撰寫上的具體技巧：
+### 4. 描述的明確度指引
 
 - 避免模糊詞彙（如 "helper"、"utils"、"適當處理"）
 - 同時說明「做什麼」和「什麼情境下用」
 - 測試方法：這份說明是否能讓不同能力等級的模型（Haiku/Sonnet/Opus）都得出一致的理解
 
-### 綜合成一份可套用的 Spec 骨架
+### 綜合成一份可套用的 spec 骨架
 
 ```markdown
 ## 背景 / 為什麼要做
@@ -328,7 +309,7 @@ Claude Code 官方推薦的四階段流程：
 ## 參考解或範例（如果有）
 ```
 
-最核心的一句話可以總結官方立場：**Spec 的清晰度，不是用「寫了多少字」衡量，而是用「兩個不看你討論過程的人，能不能得出同樣的驗收結論」來衡量。** 這也正好是把「grilling session」轉成 spec 時該用來自我檢驗的判準。
+最核心的一句話可以總結：**Spec 的清晰度，不是用「寫了多少字」衡量，而是用「兩個獨立的 session，能不能得出同樣的驗收結論」來衡量。** 
 
 
 ---
@@ -339,53 +320,27 @@ how to break down big projects into phases your agent can execute one at a time,
 
 ## 「拆解大型專案為 Session 級任務」的建議
 
-### 1. Context 視窗限制與管理機制
+**規劃 → 執行 → 驗證，盡量分開處理**
 
-Context 會隨對話歷史、檔案讀取、工具輸出快速填滿,進而影響效能。官方提供的機制：
+- 先用 Plan mode 把大任務拆成明確步驟、產出一份計畫（文字或寫成檔案），再進 Execute 階段照著做，最後獨立開一次驗證 review。三段責任不同，混在同一個 context 裡容易讓 Claude 忘記早期決策或被後面雜訊帶偏。
 
-- **自動 Compaction**：接近 context 上限時系統自動摘要對話歷史，保留核心程式碼與決策
-- `/clear`：重置 context，開啟全新獨立對話（前段對話仍可用 `/resume` 找回）
-- `/compact [instructions]`：手動觸發摘要,可指定要保留的重點
-- `/context`：檢視目前 context 消耗狀況
-- `/rewind`：回溯到歷史訊息點
+**善用 subagent 把「探索性」子任務切出去**
 
-**官方建議何時開新 session**：(1) 要處理完全無關的任務時用 `/clear`；(2) 同一 session 中同一錯誤已被糾正兩次以上、context 已被汙染時，開新 session 並給更精準的初始提示。
+- 研究型、平行型、或會產生大量中間輸出的子任務（例如同時研究三個模組），丟給 subagent 執行，只把摘要帶回主 session,主 context 才不會被塞爆。
 
-### 2. Plan Mode + CLAUDE.md 做為階段拆解工具
+**Context 管理三個指令搭配用**
 
-官方工作流是 **Explore → Plan → Implement → Commit** 四階段：
+- `/context` 看用量、`/compact` 保留摘要繼續做、`/clear` 完全重來（舊對話可 `/resume` 找回）。經驗法則：同一階段內 context 快滿就先 `/compact`；換到完全不同性質的任務（例如從寫 code 切到寫文件),或想要「不帶偏見」的乾淨審查視角時,直接開新 session 比硬凹省 context 更好。
 
-- 先用 plan mode（`--permission-mode plan` 或 Shift+Tab）只讀探索,避免倉促下手
-- 產出詳細計畫後才實作
-- **CLAUDE.md** 會在每個 session 自動載入（透過 prompt caching,不額外耗費 token）,適合存放專案慣例、建置指令
-- 跨多 session 的大型任務,官方建議把階段性計畫寫入 `PLAN.md` 等 markdown 檔,供後續 session 接續讀取
+**跨 session 銜接靠外部持久化,不要依賴對話記憶**
 
-### 3. Subagent 作為 Context 隔離手段
+- 專案慣例、架構決策寫進 CLAUDE.md（一次性載入）；分階段的計畫本身寫成 markdown 檔案存在 repo 或 scratchpad,每個新 session 開頭先讀這份計畫,而不是指望 Claude 記得上次聊到哪。和 CLAUDE.md 及 memory 系統是互補的：memory 記的是「怎麼跟你合作」，計畫文件記的是「這次專案到哪一步」。
 
-- 每個 subagent 有**獨立、全新的 context**（不含父 session 對話歷史）
-- subagent 完整工作過程只以摘要形式回傳父 session,保持主 context 精簡
-- 適合用來隔離大量檔案讀取、測試輸出、或需要 fresh context 的驗證任務（如 code review）
+**平行開發用 git worktree + 各自 session**
 
-若需要**真正跨 session 並行協作**,官方另提供 **Agent Teams**：多個獨立 session 共享任務清單並互相溝通,成本較高,適合需跨 session 協調的複雜任務（如多角度除錯、跨模組重構）。
+- 如果有多條獨立分支要同時推進,每個 worktree 開一個獨立 session,彼此 context 不互相污染。
 
-### 4. 長時間執行、Checkpoint、跨 Session 交接
-
-- **Checkpoint**：每次使用者提示自動建立檢查點,保留最新 100 個快照,可用 `/rewind` 選擇歷史點復原程式碼或對話
-- **Task Budgets**（Claude API 層）：可對長時間 agentic loop 設定 token 預算（如 `task_budget: {total: 64000}`）,模型會看到預算計數並自我調節,預算將盡時主動摘要而非中斷；`remaining` 欄位可在 session 間傳遞預算狀態
-- session 超過 100K token 且逾 1 小時未活動,恢復時會跳出「從摘要開始」的選項
-
-### 5. 決定何時開新 Session 的判斷準則
-
-| 情境                                | 建議                           |
-| --------------------------------- | ---------------------------- |
-| 任務完全無關、前一任務已完成                    | `/clear` 或新 session          |
-| 同一錯誤已被糾正 2 次以上,context 已污染        | 新 session + 更精準提示            |
-| 需要並行但獨立的工作（如多角度 review）           | Agent Team 或 Worktree        |
-| 單一 session 逾 100K token + 1 小時未活躍 | 恢復時考慮從摘要開始                   |
-| 大型單體專案需分包處理                       | 從子目錄啟動 Claude + 多層 CLAUDE.md |
-| 需要檔案隔離的並行工作                       | Worktree（`--worktree`）       |
-
-**核心原則**：以「**任務邊界的變化**」與「**context 內容的相關性**」而非單純時間長度或 token 用量來決定 session 邊界, 即使 context 還有餘量,無關的工作也應該分離開新 session。
+一句話版本：**用計畫文件（plan.md 或其他類似產出）和CLAUDE.md 當作跨 session 的「事實源」,session 本身當成一次性的執行單位** ── 每個段落都可以換新 session。
 
 ---
 
