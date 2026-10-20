@@ -1,5 +1,4 @@
-# learn AI coding
-
+Learn AI coding
 
 https://www.aihero.dev/workshops/ai-coding-crash-course 結合官方文件的紀錄
 
@@ -174,11 +173,11 @@ Claude Code 不維護中央向量索引，而是像人類工程師一樣「即�
 
 ## 促使 Claude「用既有的、別重造」的具體操作技巧
 
-官方 best-practices 文件特別點出的 prompting 模式：
+官方文件特別點出的 prompting 模式：
 
 1. **Explore → Plan → Code → Commit** 四階段工作流。用 plan mode（`Shift+Tab`）先讓 Claude 純讀檔案、回答問題，不動手改，逼它先建立對既有程式碼的理解再進入實作。
     
-2. **明確指向既有 pattern**，而不是描述目標本身。文件給的對比範例很直接：
+2. **明確指向既有 pattern**，而不是描述目標本身。對比範例：
     
     > 差：「add a calendar widget」 
     > 
@@ -192,13 +191,13 @@ Claude Code 不維護中央向量索引，而是像人類工程師一樣「即�
     
     這樣一來，主對話的 context 不會被一堆讀檔案的過程污染，只拿到「有沒有現成東西可用」的結論。
     
-1. **像問資深工程師一樣直接發問**：「How does logging work?」「What edge cases does X handle?」——不需要特殊 prompt 技巧，直接問即可。
+4. **像工程師一樣直接發問**：「How does logging work?」「What edge cases does X handle?」——不需要特殊 prompt 技巧，直接問即可。
     
-## 常見失敗模式（文件明確列出）
+## 常見失敗模式
 
 - **infinite exploration**：叫 Claude 去「調查」卻沒有界定範圍，結果讀了幾百個檔案把 context 塞爆 → 對策：narrow scope 或改用 subagent 隔離。
-- **over-specified CLAUDE.md**：塞太多東西進去，重要規則反而被稀釋、被忽略 → 對策：每條規則自問「拿掉這行 Claude 會不會做錯」，不會就刪。
-- **探索與編輯混在同一個 context**：導致主 session 的 context 被大量讀檔內容佔滿，後續編輯品質下降 → 對策：探索交給 subagent，只留結論。
+- **over-specified CLAUDE.md**：塞太多東西進去，重要規則反而被稀釋、被忽略 → 對策：可以自問「拿掉這行 Claude 會不會做錯」。
+- **探索與實作混在同一個 context**：導致主 session 的 context 被大量讀檔內容佔滿，後續編輯品質下降 → 對策：探索交給 subagent，只留結論。
 
 ## 治理層面的建議（組織規模）
 
