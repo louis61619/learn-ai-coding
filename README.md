@@ -1,4 +1,4 @@
-Learn AI coding
+# Learn AI coding
 
 https://www.aihero.dev/workshops/ai-coding-crash-course 結合官方文件的紀錄
 
